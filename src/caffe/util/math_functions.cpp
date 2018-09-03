@@ -382,4 +382,64 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
   cblas_dscal(n, alpha, y, 1);
 }
 
+/// add new functions.
+
+/// y:= norm2(x)
+template<>
+float caffe_cpu_norm2<float>(const int n, const float *x) {
+	return cblas_snrm2(n, x, 1);
+}
+
+template<>
+double caffe_cpu_norm2<double>(const int n, const double *x) {
+	return cblas_dnrm2(n, x, 1);
+}
+
+/// y := argmax(abs(x))
+template<>
+int caffe_cpu_amax<float>(const int n , const float* x) {
+	return cblas_isamax(n, x, 1);
+}
+
+template<>
+int caffe_cpu_amax<double>(const int n, const double* x) {
+	return cblas_idamax(n, x, 1);
+}
+
+template<typename DType>
+DType caffe_cpu_trace(const int n, const DType *x) {
+    DType sum = 0;
+    for(int i = 0;i < n; ++i) {
+        sum += x[i*n+i];
+    }
+    return sum;
+}
+
+
+template float caffe_cpu_trace<float>(const int n, const float *x);
+template double caffe_cpu_trace<double>(const int n , const double *x);
+
+
+template <typename DType>
+void caffe_cpu_vm_mul(const int n, const DType * x, const int m, DType *Y) {
+    for(int i = 0; i < n; ++i) {
+        caffe_scal(m, x[i], Y+i*m);
+    } 
+}
+
+template void caffe_cpu_vm_mul<float>(const int n, const float *x, const int m, float *Y);
+template void caffe_cpu_vm_mul<double>(const int n, const double *x, const int m,  double *Y);
+
+template<typename DType>
+void caffe_cpu_vm_add(const int n, const DType *x, const int m, DType *Y){
+    for(int i = 0; i < n; ++i){
+        caffe_add_scalar(m, x[i], Y+i*m);
+    }
+}
+
+template void caffe_cpu_vm_add<float>(const int n, const float *x , const int m, float * Y);
+template void caffe_cpu_vm_add<double>(const int n, const double *x , const int m, double * Y);
+
+
+
 }  // namespace caffe
