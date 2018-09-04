@@ -108,6 +108,25 @@ Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
 template <typename Dtype>
 Dtype caffe_cpu_asum(const int n, const Dtype* x);
 
+// y := norm2(x)
+template <typename DType>
+DType caffe_cpu_norm2(const int n, const DType *x);
+
+// y := argmax(abs(x))
+template <typename DType>
+int caffe_cpu_amax(const int n, const DType *x);
+
+template <typename DType>
+DType caffe_cpu_trace(const int n, const DType *x);
+
+template <typename DType>
+void caffe_cpu_vm_mul(const int n, const DType *x, const int m, DType * Y);
+
+template <typename DType>
+void caffe_cpu_vm_add(const int n, const DType *x, const int m, DType * Y);
+
+
+
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template<typename Dtype>
@@ -257,6 +276,18 @@ void caffe_gpu_fabs(const int n, const Dtype* x, Dtype* y);
 template <typename Dtype>
 void caffe_gpu_scale(const int n, const Dtype alpha, const Dtype *x, Dtype* y);
 
+
+template <typename DType>
+void caffe_gpu_norm2(const int n, const DType *x, DType * y);
+
+template <typename DType>
+void caffe_gpu_vm_mul(const int n, const DType *x, const int m, DType *y);
+
+
+template <typename DType>
+void caffe_gpu_vm_add(const int n, const DType *x, const int m, DType * y);
+
+
 #define DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(name, operation) \
 template<typename Dtype> \
 __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
@@ -276,6 +307,10 @@ void caffe_gpu_##name<double>(const int n, const double* x, double* y) { \
   name##_kernel<double><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 }
+
+
+
+
 
 #endif  // !CPU_ONLY
 
