@@ -55,6 +55,32 @@ TYPED_TEST(CPUMathFunctionsTest, TestNothing) {
   //   due to the set up overhead.
 }
 
+
+TYPED_TEST(CPUMathFunctionsTest, TestNorm) {
+	int n = this->blob_bottom_->count();
+	const TypeParam* x = this->blob_bottom_->cpu_data();
+	TypeParam result = 0;
+	double tmp = 0;
+	for(int i = 0; i < n ; ++i) {
+		tmp += x[i] * x[i];
+	}	
+	tmp = sqrt(tmp);
+	result = caffe_cpu_norm2<TypeParam>(n, x);
+	EXPECT_NEAR(result, tmp, 1e-5);
+}
+
+TYPED_TEST(CPUMathFunctionsTest, TestTrace) {
+    Blob<TypeParam> x;
+    x.Reshape(1,1,3,3);
+    TypeParam data[] = {1,2,3,4,5,6,7,8,9};
+    caffe_copy(9, data, x.mutable_cpu_data());
+    TypeParam result = caffe_cpu_trace(3, x.cpu_data());
+    TypeParam gt = 1+5+9;
+    EXPECT_NEAR(result, gt, 1e-5);
+
+}
+
+
 TYPED_TEST(CPUMathFunctionsTest, TestAsum) {
   int n = this->blob_bottom_->count();
   const TypeParam* x = this->blob_bottom_->cpu_data();
@@ -119,6 +145,41 @@ TYPED_TEST(CPUMathFunctionsTest, TestCopy) {
   }
 }
 
+TYPED_TEST(CPUMathFunctionsTest, TestvmMul) {
+    Blob<float> x, A;
+    x.Reshape(1,1,3, 1);
+    A.Reshape(1,1,3, 2);
+    float a_data[] = {1,2,3,4,5,6};
+    float x_data[] = {0.5, 1.5, 2.};
+    caffe_copy(6, a_data, A.mutable_cpu_data());
+    caffe_copy(3, x_data, x.mutable_cpu_data());
+
+    float result[] = {0.5, 1., 4.5, 6., 10., 12.};
+    caffe_cpu_vm_mul(3, x.cpu_data(), 2, A.mutable_cpu_data());
+    
+    for(int i = 0; i < 6; ++i) {
+        EXPECT_NEAR(A.cpu_data()[i], result[i], 1e-5);
+    }
+}
+
+TYPED_TEST(CPUMathFunctionsTest, TestvmAdd) {
+    Blob<float> x, A;
+    x.Reshape(1,1,3, 1);
+    A.Reshape(1,1,3, 2);
+    float a_data[] = {1,2,3,4,5,6};
+    float x_data[] = {0.5, 1.5, 2.};
+    caffe_copy(6, a_data, A.mutable_cpu_data());
+    caffe_copy(3, x_data, x.mutable_cpu_data());
+
+    float result[] = {1.5, 2.5, 4.5, 5.5, 7., 8.};
+    caffe_cpu_vm_add(3, x.cpu_data(), 2, A.mutable_cpu_data());
+    
+    for(int i = 0; i < 6; ++i) {
+        EXPECT_NEAR(A.cpu_data()[i], result[i], 1e-5);
+    }
+
+}
+
 #ifndef CPU_ONLY
 
 template <typename Dtype>
@@ -138,6 +199,56 @@ TYPED_TEST(GPUMathFunctionsTest, TestAsum) {
   caffe_gpu_asum<TypeParam>(n, this->blob_bottom_->gpu_data(), &gpu_asum);
   EXPECT_LT((gpu_asum - std_asum) / std_asum, 1e-2);
 }
+
+TYPED_TEST(GPUMathFunctionsTest, TestNorm) {
+	int n = this->blob_bottom_->count();
+	const TypeParam* x = this->blob_bottom_->cpu_data();
+	double tmp = 0;
+	for(int i = 0; i < n; ++i) {
+		tmp += x[i] * x[i];
+	}
+	tmp = sqrt(tmp);
+	TypeParam gpu_norm;
+	caffe_gpu_norm2<TypeParam>(n, this->blob_bottom_->gpu_data(), &gpu_norm);
+	EXPECT_NEAR(gpu_norm, tmp, 1e-5);
+}
+
+TYPED_TEST(GPUMathFunctionsTest, TestvmMul) {
+    Blob<float> x, A;
+    x.Reshape(1,1,3, 1);
+    A.Reshape(1,1,3, 2);
+    float a_data[] = {1,2,3,4,5,6};
+    float x_data[] = {0.5, 1.5, 2.};
+    caffe_copy(6, a_data, A.mutable_cpu_data());
+    caffe_copy(3, x_data, x.mutable_cpu_data());
+
+    float result[] = {0.5, 1., 4.5, 6., 10., 12.};
+    caffe_gpu_vm_mul(3, x.gpu_data(), 2, A.mutable_gpu_data());
+    
+    for(int i = 0; i < 6; ++i) {
+        EXPECT_NEAR(A.cpu_data()[i], result[i], 1e-5);
+    }
+
+}
+
+TYPED_TEST(GPUMathFunctionsTest, TestvmAdd) {
+    Blob<float> x, A;
+    x.Reshape(1,1,3, 1);
+    A.Reshape(1,1,3, 2);
+    float a_data[] = {1,2,3,4,5,6};
+    float x_data[] = {0.5, 1.5, 2.};
+    caffe_copy(6, a_data, A.mutable_cpu_data());
+    caffe_copy(3, x_data, x.mutable_cpu_data());
+
+    float result[] = {1.5, 2.5, 4.5, 5.5, 7., 8.};
+    caffe_gpu_vm_add(3, x.gpu_data(), 2, A.mutable_gpu_data());
+    
+    for(int i = 0; i < 6; ++i) {
+        EXPECT_NEAR(A.cpu_data()[i], result[i], 1e-5);
+    }
+
+}
+
 
 TYPED_TEST(GPUMathFunctionsTest, TestSign) {
   int n = this->blob_bottom_->count();
@@ -196,6 +307,7 @@ TYPED_TEST(GPUMathFunctionsTest, TestCopy) {
     EXPECT_EQ(bottom_data[i], top_data[i]);
   }
 }
+
 
 #endif
 

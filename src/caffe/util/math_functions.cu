@@ -456,4 +456,61 @@ void caffe_gpu_rng_gaussian(const int n, const double mu, const double sigma,
       curandGenerateNormalDouble(Caffe::curand_generator(), r, n, mu, sigma));
 }
 
+///
+template <>
+void caffe_gpu_norm2<float>(const int n, const float *x, float * y) {
+ 	CUBLAS_CHECK(cublasSnrm2(Caffe::cublas_handle(), n, x, 1, y));
+}
+
+template <>
+void caffe_gpu_norm2<double>(const int n, const double *x, double * y) {
+ 	CUBLAS_CHECK(cublasDnrm2(Caffe::cublas_handle(), n, x, 1, y));
+}
+
+/// x: n,1 y: n, m
+template <typename DType>
+__global__ void vm_mul_kernel(const int n, const DType * x, const int m, 
+        DType * y) {
+    uint32_t id = blockDim.x * blockIdx.x + threadIdx.x;
+    if(id < n*m) {
+        uint32_t idx = id/m;
+        y[id] *= x[idx];
+    }
+}
+
+/// x: n,1 y: n, m
+template <typename DType>
+__global__ void vm_add_kernel(const int n, const DType * x, const int m, 
+        DType * y) {
+    uint32_t id = blockDim.x * blockIdx.x + threadIdx.x;
+    if(id < n*m) {
+        uint32_t idx = id/m;
+        y[id] += x[idx];
+    }
+}
+
+
+
+template<typename DType>
+void caffe_gpu_vm_mul(const int n, const DType *x, const int m, DType *y) {
+  uint32_t N = n*m;
+  vm_mul_kernel<DType><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        n, x,m, y);
+}
+
+template void caffe_gpu_vm_mul<float>(const int n, const float *x, const int m, float *y);
+template void caffe_gpu_vm_mul<double>(const int n, const double *x, const int m, double *y);
+
+template<typename DType>
+void caffe_gpu_vm_add(const int n, const DType *x, const int m, DType *y) {
+  uint32_t N = n*m;
+  vm_add_kernel<DType><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        n, x,m, y);
+}
+
+template void caffe_gpu_vm_add<float>(const int n, const float *x, const int m, float *y);
+template void caffe_gpu_vm_add<double>(const int n, const double *x, const int m, double *y);
+
+
+
 }  // namespace caffe
