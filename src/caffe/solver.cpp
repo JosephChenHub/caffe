@@ -447,13 +447,13 @@ void Solver<Dtype>::CheckSnapshotWritePermissions() {
     } else {
       LOG(FATAL) << "Cannot write to snapshot prefix '"
           << param_.snapshot_prefix() << "'.  Make sure "
-          << "that the directory exists and is writable.";
+          << "that the directory exists and is writeable.";
     }
   }
 }
 
 template <typename Dtype>
-string Solver<Dtype>::SnapshotFilename(const string& extension) {
+string Solver<Dtype>::SnapshotFilename(const string extension) {
   return param_.snapshot_prefix() + "_iter_" + caffe::format_int(iter_)
     + extension;
 }
